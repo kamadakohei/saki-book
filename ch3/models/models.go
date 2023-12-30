@@ -12,7 +12,7 @@ type Comment struct {
 type Article struct {
 	ID          int       `json:"article_id"`
 	Title       string    `json:"title"`
-	Content     string    `json:"contents"`
+	Contents    string    `json:"contents"`
 	UserName    string    `json:"user_name"`
 	NiceNum     int       `json:"nice"`
 	CommentList []Comment `json:"comment_list"`
