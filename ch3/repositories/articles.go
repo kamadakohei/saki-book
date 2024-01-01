@@ -41,7 +41,7 @@ func SelectArticleList(db *sql.DB, page int) ([]models.Article, error) {
 	for rows.Next() {
 		var article models.Article
 		var createdTime sql.NullTime
-		err := rows.Scan(&article.ID, &article.Title, &article.Contents, &article.UserName, &article.NiceNum, &article.CreatedAt)
+		err := rows.Scan(&article.ID, &article.Title, &article.Contents, &article.UserName, &article.NiceNum, &createdTime)
 
 		if createdTime.Valid {
 			article.CreatedAt = createdTime.Time
@@ -82,16 +82,13 @@ func SelectArticleDetail(db *sql.DB, articleID int) (models.Article, error) {
 func UpdateNiceNum(db *sql.DB, articleID int) error {
 	tx, err := db.Begin()
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 
-	article_id := 1
 	const sqlGetNice = `SELECT nice FROM articles WHERE article_id = ?`
 
-	row := tx.QueryRow(sqlGetNice, article_id)
+	row := tx.QueryRow(sqlGetNice, articleID)
 	if err != nil {
-		fmt.Println(err)
 		tx.Rollback()
 		return err
 	}
@@ -99,16 +96,14 @@ func UpdateNiceNum(db *sql.DB, articleID int) error {
 	var niceNum int
 	err = row.Scan(&niceNum)
 	if err != nil {
-		fmt.Println(err)
 		tx.Rollback()
 		return err
 	}
 
 	const sqlUpdateNice = `UPDATE articles SET nice = ? WHERE article_id = ?`
 
-	_, err = tx.Exec(sqlUpdateNice, niceNum+1, niceNum)
+	_, err = tx.Exec(sqlUpdateNice, niceNum+1, articleID)
 	if err != nil {
-		fmt.Println(err)
 		tx.Rollback()
 		return err
 	}
