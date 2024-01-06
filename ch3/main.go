@@ -7,10 +7,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/kamadakohei/saki-book/ch3/services"
-
-	"github.com/gorilla/mux"
-	"github.com/kamadakohei/saki-book/ch3/controllers"
+	"github.com/kamadakohei/saki-book/ch3/api"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -29,17 +26,7 @@ func main() {
 		return
 	}
 
-	ser := services.NewMyAppService(db)
-	con := controllers.NewMyAppController(ser)
-
-	r := mux.NewRouter()
-
-	r.HandleFunc("/article", con.PostArticleHandler).Methods(http.MethodPost)
-	r.HandleFunc("/article/list", con.ArticleListHandler).Methods(http.MethodGet)
-	r.HandleFunc("/article/{id:[0-9]+}", con.ArticleDetailHandler).Methods(http.MethodGet)
-	r.HandleFunc("/article/nice", con.PostNiceHandler).Methods(http.MethodPost)
-
-	r.HandleFunc("/comment", con.PostCommentHandler).Methods(http.MethodPost)
+	r := api.NewRouter(db)
 
 	log.Println("server start at port 8080")
 	log.Fatal(http.ListenAndServe(":8080", r))

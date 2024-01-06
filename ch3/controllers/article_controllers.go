@@ -5,24 +5,27 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/kamadakohei/saki-book/ch3/apperrors"
+
 	"github.com/gorilla/mux"
+	"github.com/kamadakohei/saki-book/ch3/controllers/services"
 	"github.com/kamadakohei/saki-book/ch3/models"
-	"github.com/kamadakohei/saki-book/ch3/services"
 )
 
-type MyAppController struct {
-	service *services.MyAppService
+type ArticleController struct {
+	service services.ArticleServicer
 }
 
-func NewMyAppController(s *services.MyAppService) *MyAppController {
-	return &MyAppController{
+func NewArticleController(s services.ArticleServicer) *ArticleController {
+	return &ArticleController{
 		service: s,
 	}
 }
 
-func (c *MyAppController) PostArticleHandler(w http.ResponseWriter, req *http.Request) {
+func (c *ArticleController) PostArticleHandler(w http.ResponseWriter, req *http.Request) {
 	var reqArticle models.Article
 	if err := json.NewDecoder(req.Body).Decode(&reqArticle); err != nil {
+		err = apperrors.ReqBodyDecodeFailed.Wrap(err, "fail to decode req body json")
 		http.Error(w, "fail to decode json\n", http.StatusBadRequest)
 	}
 
@@ -35,7 +38,7 @@ func (c *MyAppController) PostArticleHandler(w http.ResponseWriter, req *http.Re
 	json.NewEncoder(w).Encode(article)
 }
 
-func (c *MyAppController) ArticleListHandler(w http.ResponseWriter, req *http.Request) {
+func (c *ArticleController) ArticleListHandler(w http.ResponseWriter, req *http.Request) {
 	queryMap := req.URL.Query()
 
 	var page int
@@ -43,6 +46,7 @@ func (c *MyAppController) ArticleListHandler(w http.ResponseWriter, req *http.Re
 		var err error
 		page, err = strconv.Atoi(p[0])
 		if err != nil {
+			err = apperrors.BadParam.Wrap(err, "query parameter must be integer")
 			http.Error(w, "Invalid query parameter", http.StatusBadRequest)
 			return
 		}
@@ -59,7 +63,7 @@ func (c *MyAppController) ArticleListHandler(w http.ResponseWriter, req *http.Re
 	json.NewEncoder(w).Encode(articleList)
 }
 
-func (c *MyAppController) ArticleDetailHandler(w http.ResponseWriter, req *http.Request) {
+func (c *ArticleController) ArticleDetailHandler(w http.ResponseWriter, req *http.Request) {
 	articleID, err := strconv.Atoi(mux.Vars(req)["id"])
 	if err != nil {
 		http.Error(w, "Invalid path parameter", http.StatusBadRequest)
@@ -75,7 +79,7 @@ func (c *MyAppController) ArticleDetailHandler(w http.ResponseWriter, req *http.
 	json.NewEncoder(w).Encode(article)
 }
 
-func (c *MyAppController) PostNiceHandler(w http.ResponseWriter, req *http.Request) {
+func (c *ArticleController) PostNiceHandler(w http.ResponseWriter, req *http.Request) {
 	var reqArticle models.Article
 	if err := json.NewDecoder(req.Body).Decode(&reqArticle); err != nil {
 		http.Error(w, "fail to decode json\n", http.StatusBadRequest)
@@ -88,19 +92,4 @@ func (c *MyAppController) PostNiceHandler(w http.ResponseWriter, req *http.Reque
 	}
 
 	json.NewEncoder(w).Encode(article)
-}
-
-func (c *MyAppController) PostCommentHandler(w http.ResponseWriter, req *http.Request) {
-	var reqComment models.Comment
-	if err := json.NewDecoder(req.Body).Decode(&reqComment); err != nil {
-		http.Error(w, "fail to decode json\n", http.StatusBadRequest)
-	}
-
-	comment, err := c.service.PostCommentService(reqComment)
-	if err != nil {
-		http.Error(w, "fail internal exec\n", http.StatusInternalServerError)
-		return
-	}
-
-	json.NewEncoder(w).Encode(comment)
 }
